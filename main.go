@@ -52,15 +52,27 @@ func parseCSV(filePath string) []student {
 }
 
 func calculateGrade(students []student) []studentStat {
-	return nil
+	var studentStats []studentStat
+	for _, row := range students {
+		var st studentStat
+		total := float32(row.test1Score+row.test2Score+row.test3Score+row.test4Score) / 4
+		st.student = row
+		st.finalScore = total
+		st.grade = getGrade(total)
+		studentStats = append(studentStats, st)
+	}
+
+	return studentStats
 }
 
 func findOverallTopper(gradedStudents []studentStat) studentStat {
-	return studentStat{}
-}
-
-func findTopperPerUniversity(gs []studentStat) map[string]studentStat {
-	return nil
+	topper := gradedStudents[0]
+	for _, row := range gradedStudents {
+		if row.finalScore > topper.finalScore {
+			topper = row
+		}
+	}
+	return topper
 }
 
 func check(e error) {
@@ -70,7 +82,8 @@ func check(e error) {
 }
 
 func main() {
-	parseCSV("grades.csv")
+	students := parseCSV("grades.csv")
+	calculateGrade(students)
 }
 
 func createStudentFromRow(row []string) (student, error) {
@@ -95,4 +108,33 @@ func createStudentFromRow(row []string) (student, error) {
 	st.test3Score = t3Score
 	st.test4Score = t4Score
 	return st, nil
+}
+
+func getGrade(score float32) Grade {
+	if score >= 70 {
+		return A
+	} else if score < 70 && score >= 50 {
+		return B
+	} else if score < 50 && score >= 35 {
+		return C
+	} else {
+		return F
+	}
+}
+
+func findTopperPerUniversity(gs []studentStat) map[string]studentStat {
+	topperPerUni := make(map[string]studentStat)
+	studentsUniMap := createStudentUniMap(gs)
+	for uni, students := range studentsUniMap {
+		t := findOverallTopper(students)
+		topperPerUni[uni] = t
+	}
+	return topperPerUni
+}
+func createStudentUniMap(gs []studentStat) map[string][]studentStat {
+	studentsUniMap := make(map[string][]studentStat)
+	for _, stStat := range gs {
+		studentsUniMap[stStat.university] = append(studentsUniMap[stStat.university], stStat)
+	}
+	return studentsUniMap
 }
